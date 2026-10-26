@@ -1,0 +1,9 @@
+{
+ "part.material": "EN AC-42100 (cast aluminium)",
+ "part.general_tolerance": "ISO 2768-m",
+ "hole.function:holes:33.35": "fit:H7",
+ "hole.function:hole_patterns.set:31.32": "clearance:M8",
+ "hole.position:hole_patterns.set:31.32": "0.2",
+ "datum.A": [17],
+ "datum.A.flatness": "0.05"
+}

@@ -1,0 +1,130 @@
+# On each pull request that changes a STEP file, compare it with the base branch's using
+# Specify (specify-core diff) and keep one comment on the pull request up to date: what changed
+# in the part, its picture, and the Specify answers carried to the new revision.
+name: STEP diff
+
+on:
+  pull_request:
+    paths: ['**.step', '**.stp', '**.answers.json']
+
+permissions:
+  contents: write       # the pictures, on the step-diff-images branch
+  pull-requests: write  # the comment
+
+env:
+  SPECIFY_VERSION: v0.1.0-alpha.9
+
+jobs:
+  diff:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          fetch-depth: 0
+
+      - name: Install specify-core
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          name="specify-core-$SPECIFY_VERSION-x86_64-unknown-linux-gnu"
+          gh release download "$SPECIFY_VERSION" -R pzfreo/specify-core-rust -p "$name.tar.gz" -p "$name.tar.gz.sha256" -D "$RUNNER_TEMP"
+          cd "$RUNNER_TEMP" && sha256sum -c "$name.tar.gz.sha256" && tar -xzf "$name.tar.gz"
+          echo "$RUNNER_TEMP/$name" >> "$GITHUB_PATH"
+
+      - name: Compare each changed STEP file
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/out"
+          git diff --name-only --diff-filter=AM "$BASE" "$HEAD" -- '*.step' '*.stp' > "$RUNNER_TEMP/changed"
+          # A part whose answers changed but not its STEP file is compared too.
+          git diff --name-only "$BASE" "$HEAD" -- '*.answers.json' | sed 's/\.answers\.json$/.step/' | while read -r f; do
+            [ -f "$f" ] && echo "$f"
+          done >> "$RUNNER_TEMP/changed"
+          sort -u -o "$RUNNER_TEMP/changed" "$RUNNER_TEMP/changed"
+          while read -r step; do
+            stem="${step%.*}"
+            out="$RUNNER_TEMP/out/$(echo "$stem" | tr '/' '_')"
+            mkdir -p "$out"
+            if ! git cat-file -e "$BASE:$step" 2>/dev/null; then
+              echo "$step" > "$out/added"
+              continue
+            fi
+            git show "$BASE:$step" > "$out/old.step"
+            # The answers as they were on the base branch: the ones to carry.
+            answers=()
+            if git cat-file -e "$BASE:$stem.answers.json" 2>/dev/null; then
+              git show "$BASE:$stem.answers.json" > "$out/answers.old.json"
+              answers=(--answers "$out/answers.old.json")
+            fi
+            specify-core diff "$out/old.step" "$step" "${answers[@]}" --title "$step" -o "$out"
+            echo "$step" > "$out/step"
+          done < "$RUNNER_TEMP/changed"
+
+      - name: Publish the pictures
+        env:
+          PR: ${{ github.event.pull_request.number }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          dir="pr-$PR/${HEAD:0:7}"
+          git worktree add --detach "$RUNNER_TEMP/images"
+          cd "$RUNNER_TEMP/images"
+          if git ls-remote --exit-code origin step-diff-images > /dev/null; then
+            git fetch -q origin step-diff-images && git checkout -q -B step-diff-images FETCH_HEAD
+          else
+            git checkout -q --orphan step-diff-images && git rm -rq --cached . && git clean -fdq
+          fi
+          mkdir -p "$dir"
+          for out in "$RUNNER_TEMP"/out/*/; do
+            [ -f "$out/model.png" ] && cp "$out/model.png" "$dir/$(basename "$out").png"
+          done
+          git add "$dir" 2> /dev/null || exit 0
+          git -c user.name=github-actions -c user.email=github-actions@users.noreply.github.com \
+            commit -qm "Pictures for #$PR at ${HEAD:0:7}" || exit 0
+          git push -q origin step-diff-images
+
+      - name: Comment on the pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+          REPO: ${{ github.repository }}
+        run: |
+          marker='<!-- step-diff -->'
+          body="$RUNNER_TEMP/comment.md"
+          {
+            echo "$marker"
+            for out in "$RUNNER_TEMP"/out/*/; do
+              if [ -f "$out/added" ]; then
+                echo "### $(cat "$out/added"): Specify"
+                echo
+                echo "A new part: nothing to compare it with."
+                echo
+                continue
+              fi
+              [ -f "$out/report.md" ] || continue
+              image="https://github.com/$REPO/blob/step-diff-images/pr-$PR/${HEAD:0:7}/$(basename "$out").png?raw=true"
+              sed "s#](model.png)#]($image)#" "$out/report.md"
+              if [ -s "$out/answers.json" ] && [ "$(cat "$out/answers.json")" != "{}" ]; then
+                echo
+                echo "<details><summary>The answers carried to the new revision (<code>$(cat "$out/step" | sed 's/\.[^.]*$//').answers.json</code>)</summary>"
+                echo
+                echo '```json'
+                cat "$out/answers.json"
+                echo
+                echo '```'
+                echo
+                echo "</details>"
+              fi
+              echo
+            done
+            echo "<sub>Compared by [specify-core](https://github.com/pzfreo/specify-core-rust) $SPECIFY_VERSION at ${HEAD:0:7}.</sub>"
+          } > "$body"
+          id=$(gh api "repos/$REPO/issues/$PR/comments" --paginate \
+            --jq ".[] | select(.body | startswith(\"$marker\")) | .id" | head -1)
+          if [ -n "$id" ]; then
+            gh api -X PATCH "repos/$REPO/issues/comments/$id" -F body=@"$body" > /dev/null
+          else
+            gh api -X POST "repos/$REPO/issues/$PR/comments" -F body=@"$body" > /dev/null
+          fi
