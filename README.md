@@ -5,10 +5,11 @@ shows a picture of the change, and carries the part's [Specify](https://github.c
 manufacturing answers to the new revision. This repository shows it working, and is a template for
 setting it up on your own parts.
 
-**See it:** [pull request #1](https://github.com/pzfreo/step-diff-demo/pull/1) makes the flange 2 mm
-thicker and the bolt holes 1 mm smaller. This is the comment the workflow posted on it:
+**See it:** [pull request #2](https://github.com/pzfreo/step-diff-demo/pull/2) makes the flange 2 mm
+thicker and the bolt holes 1 mm smaller. This is the comment the workflow posted on it; its
+picture and its "Turn the part round in 3D" link open the part in the browser:
 
-![The STEP diff comment on pull request #1](docs/comment.png)
+![The STEP diff comment on pull request #2](docs/comment.png)
 
 The comment shows:
 
