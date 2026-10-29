@@ -30,6 +30,8 @@ hole goes from Ø2.2 to Ø2.4. Its comment lists the parts that changed, gives e
 changed", and pictures the whole assembly with the changed parts in orange. Its links open the
 assembly in 3D, or one part of it.
 
+![The STEP diff comment on pull request #5](docs/assembly-comment.png)
+
 ## Do the same in your repository
 
 1. **Add the workflow.** Copy [`.github/workflows/step-diff.yml`](.github/workflows/step-diff.yml)
