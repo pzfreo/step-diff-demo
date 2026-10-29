@@ -24,8 +24,8 @@ The comment shows:
 
 ### An assembly
 
-**See it:** [pull request #DEMO](https://github.com/pzfreo/step-diff-demo/pull/DEMO) changes two of
-gramil's twelve parts: the shaft's tapped mount holes go 1 mm deeper, and the drive plate's mount
+**See it:** [pull request #5](https://github.com/pzfreo/step-diff-demo/pull/5) changes two of
+gramil's twelve parts: the shaft's tapped mount hole goes 1 mm deeper, and the drive plate's mount
 hole goes from Ø2.2 to Ø2.4. Its comment lists the parts that changed, gives each its own "what
 changed", and pictures the whole assembly with the changed parts in orange. Its links open the
 assembly in 3D, or one part of it.
