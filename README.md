@@ -22,6 +22,14 @@ The comment shows:
   so they're flagged;
 - **the carried answers:** in a fold, ready to commit for the new revision.
 
+### An assembly
+
+**See it:** [pull request #5](https://github.com/pzfreo/step-diff-demo/pull/5) changes two of
+gramil's twelve parts: the shaft's tapped mount hole goes 1 mm deeper, and the drive plate's mount
+hole goes from Ø2.2 to Ø2.4. Its comment lists the parts that changed, gives each its own "what
+changed", and pictures the whole assembly with the changed parts in orange. Its links open the
+assembly in 3D, or one part of it.
+
 ## Do the same in your repository
 
 1. **Add the workflow.** Copy [`.github/workflows/step-diff.yml`](.github/workflows/step-diff.yml)
@@ -48,8 +56,8 @@ The comment shows:
    Without answers, the comment still shows what changed, the picture and the measures.
 
 That's all. The action's [guide](https://github.com/pzfreo/specify-core-rust/blob/main/step-diff/README.md)
-covers its options, what it compares, where the pictures go and its limits. Forks and assemblies
-are among the limits. [How `diff` works](https://github.com/pzfreo/specify-core-rust/blob/main/docs/diff.md)
+covers its options, what it compares, where the pictures go and its limits, forks among them.
+Assemblies are compared part by part, the parts paired by name. [How `diff` works](https://github.com/pzfreo/specify-core-rust/blob/main/docs/diff.md)
 explains how the two revisions are matched and what each part of the comment means.
 
 ## Try it here
@@ -70,8 +78,17 @@ pull request within your copy:
 | `cast_bearing_unit.py` | the build123d model; run it to write the STEP file |
 | `cast_bearing_unit.step` | the part |
 | `cast_bearing_unit.answers.json` | its Specify answers: material, tolerances, what each hole is for, datum A |
+| `gramil/` | gramil's model, a purfling cutter in twelve parts (pzfreo/gramil) |
+| `gramil_assembly.py` | builds `gramil_assembly.step` from it |
+| `gramil_assembly.step` | the assembly |
 | `.github/workflows/step-diff.yml` | the workflow that compares and comments |
 
 The part is build123d's
 [cast bearing unit](https://github.com/gumyr/build123d/blob/dev/examples/cast_bearing_unit.py)
 (Apache-2.0, by Gumyr): an oval flanged housing with a bearing bore and two bolt holes.
+
+The assembly is [gramil](https://github.com/pzfreo/gramil), a purfling cutter for violin making.
+`gramil/`, `gramil_assembly.py` and `gramil_assembly.step` are under the Open Community License v1
+([`gramil/LICENSE`](gramil/LICENSE)), not this repository's Apache-2.0. `gramil/` holds the parts of
+gramil's model the assembly needs, as gramil has them but for two dimensions set to an earlier
+revision's: the pull request changes them to gramil's own.
