@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>STEP diff hand-off demo</title>
+<style>
+  :root { --ink: #25333d; --muted: #6d7b84; --line: #dde3e6; --blue: #2b6688; --bg: #f6f5f0; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.55 Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 980px; margin: 0 auto; padding: 32px 20px 48px; }
+  .eyebrow { font: 11px ui-monospace, monospace; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+  h1 { font-size: clamp(26px, 4vw, 36px); line-height: 1.15; margin: 8px 0 10px; letter-spacing: -.5px; }
+  h2 { font-size: 19px; margin: 36px 0 8px; }
+  p { margin: 0 0 12px; color: #4a5a63; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; margin-top: 18px; }
+  .card { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; }
+  .card h3 { margin: 0; font-size: 16px; }
+  .card ul { margin: 0; padding-left: 18px; font-size: 13px; color: var(--muted); }
+  .card a { color: var(--blue); }
+  button { align-self: flex-start; font: inherit; font-size: 14px; padding: 9px 16px; border-radius: 5px; border: 1px solid var(--blue); background: var(--blue); color: #fff; cursor: pointer; }
+  button:hover { background: #205370; }
+  .note { font-size: 12.5px; color: var(--muted); }
+  pre { background: #fff; border: 1px solid var(--line); border-radius: 6px; padding: 12px 14px; overflow-x: auto; font-size: 12.5px; line-height: 1.5; }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .shots { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+  figure { margin: 0; background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 10px; }
+  figure img { width: 100%; height: 260px; object-fit: contain; display: block; }
+  figcaption { font-size: 12.5px; color: var(--muted); margin-top: 6px; }
+</style>
+</head>
+<body>
+<main>
+  <span class="eyebrow">Demo · a CAD tool handing two revisions to Draftwright</span>
+  <h1>Compare two revisions in Draftwright, from your own viewer.</h1>
+  <p>
+    This page stands in for a CAD tool that already has two revisions of a part. Its button opens
+    <a href="https://editor.draftwright.io/diff">Draftwright's STEP diff</a> and hands it the two files.
+    They go from this page to that one inside the browser: nothing is uploaded, and the comparison runs there,
+    in 3D, each change linked to its faces.
+  </p>
+
+  <div class="cards">
+    <section class="card">
+      <h3>Cast bearing unit</h3>
+      <ul>
+        <li><a href="files/cast_bearing_unit.before.step">before</a> → <a href="files/cast_bearing_unit.after.step">after</a>: flange 2 mm thicker, bolt holes Ø10 → Ø9</li>
+      </ul>
+      <button type="button" data-before="files/cast_bearing_unit.before.step" data-after="files/cast_bearing_unit.after.step" data-name="cast_bearing_unit.step">Compare in Draftwright</button>
+    </section>
+    <section class="card">
+      <h3>gramil, an assembly of 12 parts</h3>
+      <ul>
+        <li><a href="files/gramil_assembly.before.step">before</a> → <a href="files/gramil_assembly.after.step">after</a>: the shaft's tap 1 mm deeper, the drive plate's hole Ø2.2 → Ø2.4</li>
+      </ul>
+      <button type="button" data-before="files/gramil_assembly.before.step" data-after="files/gramil_assembly.after.step" data-name="gramil_assembly.step">Compare in Draftwright</button>
+    </section>
+  </div>
+  <p class="note" id="status">The button opens a new window: allow pop-ups for this page if your browser asks.</p>
+
+  <h2>The code behind the button</h2>
+  <p>All of it, from <a href="https://github.com/pzfreo/specify-core-rust/blob/main/step-diff/HANDOFF.md">step-diff/HANDOFF.md</a>.
+    Each file is a Blob, File, ArrayBuffer or Uint8Array of a STEP file, or a gzipped one.</p>
+<pre><code>function compareInDraftwright(before, after) {
+  // before, after: { name: 'bracket.step', data: Blob | File | ArrayBuffer | Uint8Array }
+  const origin = 'https://editor.draftwright.io';
+  const diff = window.open(`${origin}/diff`);
+  addEventListener('message', function ready(e) {
+    if (e.source !== diff || e.origin !== origin || e.data?.type !== 'draftwright:diff-ready') return;
+    removeEventListener('message', ready);
+    diff.postMessage({ type: 'draftwright:diff', before, after }, origin);
+  });
+}</code></pre>
+
+  <h2>From a command line or a snapshot tool</h2>
+  <p>The same comparison without a browser: <code>specify-core diff</code>, from the
+    <a href="https://github.com/pzfreo/specify-core-rust/releases/latest">release binaries</a> (Linux, macOS, Windows).
+    It writes a report in plain words, a picture with the changes coloured, and the same as JSON.</p>
+<pre><code>specify-core diff before.step after.step --title part.step -o out
+#  out/report.md    what changed, in engineering terms
+#  out/model.png    the new part, changed faces orange, removed in red
+#  out/report.json  the same, structured</code></pre>
+<pre><code>**What changed**                                  (cast bearing unit, out/report.md)
+
+- 4× R1 fillets, at (-32.2, -14.3, 10.7), (32.2, 14.3, 10.7), (-32.2, 14.3, 10.7) and (32.2, -14.3, 10.7): moved Z +2
+- 2× Ø10 × 11 through holes, on the −Z side, at X 10.9, Y 28.4; X 87.4, Y 28.4 from the −X, −Y corner: depth 11 → 13; diameter 10 → 9
+- 4× freeform surfaces: reshaped; moved Z +2</code></pre>
+<pre><code>✅ 2 parts changed (GRM-02 shaft, GRM-04 drive plate), 10 unchanged.    (gramil, out/report.md)
+
+| Part               | Quantity | Change     |
+| GRM-02 shaft       | 1        | ✅ changed |
+| GRM-04 drive plate | 1        | ✅ changed |</code></pre>
+  <div class="shots">
+    <figure><img src="files/cast_bearing_unit.diff.png" alt="The cast bearing unit, its changed faces in orange"><figcaption>out/model.png: the cast bearing unit</figcaption></figure>
+    <figure><img src="files/gramil_assembly.diff.png" alt="The gramil assembly, the two changed parts in orange"><figcaption>out/model.png: the gramil assembly</figcaption></figure>
+  </div>
+</main>
+<script>
+  // The snippet above, with the files fetched from this page. The window opens on the click (as
+  // pop-up blockers require); the files are sent once it says it is ready.
+  const origin = 'https://editor.draftwright.io';
+  const status = document.getElementById('status');
+  for (const button of document.querySelectorAll('button[data-before]')) {
+    button.addEventListener('click', () => {
+      const name = button.dataset.name;
+      const files = Promise.all([button.dataset.before, button.dataset.after].map(u => fetch(u).then(r => r.blob())));
+      const diff = window.open(`${origin}/diff`);
+      if (!diff) { status.textContent = 'The window was blocked: allow pop-ups for this page and try again.'; return; }
+      addEventListener('message', async function ready(e) {
+        if (e.source !== diff || e.origin !== origin || e.data?.type !== 'draftwright:diff-ready') return;
+        removeEventListener('message', ready);
+        const [before, after] = await files;
+        diff.postMessage({ type: 'draftwright:diff', before: { name, data: before }, after: { name, data: after } }, origin);
+      });
+      status.textContent = `Opened Draftwright with the two revisions of ${name}.`;
+    });
+  }
+</script>
+</body>
+</html>
