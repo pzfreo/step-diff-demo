@@ -259,7 +259,7 @@ class ShaftParams(BaseModel):
         json_schema_extra=_spec("§4.2.11 (flat — not in spec items)", status="MEASURED"),
     )
     drive_plate_mount_depth: float = Field(
-        default=4.0,
+        default=5.0,
         gt=0,
         description="Depth of the tapped holes on the shaft's outboard end face (for the drive-plate screws). ESTIMATE.",
         json_schema_extra=_spec("§4.2.19 (mount depth — not numbered)"),
@@ -645,7 +645,7 @@ class DrivePlateParams(BaseModel):
         json_schema_extra=_spec("§4.5.48"),
     )
     mount_hole_diameter: float = Field(
-        default=2.2,
+        default=2.4,
         gt=0,
         description="Hole the MOUNT screw passes through (shaft end of plate). Standard M2 clearance fit (~0.2 mm radial). Doesn't need the sloppy captive-bearing tolerance.",
         json_schema_extra=_spec("§4.5 (mount hole — distinct from captive-screw hole)"),
