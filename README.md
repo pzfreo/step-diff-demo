@@ -32,6 +32,13 @@ assembly in 3D, or one part of it.
 
 ![The STEP diff comment on pull request #5](docs/assembly-comment.png)
 
+### From your own tool
+
+**Try it:** [the hand-off demo](https://pzfreo.github.io/step-diff-demo/handoff/) stands in for a CAD
+tool's viewer. Its button opens Draftwright's STEP diff and hands it two revisions, in the browser,
+with the few lines of [step-diff/HANDOFF.md](https://github.com/pzfreo/specify-core-rust/blob/main/step-diff/HANDOFF.md).
+The same page shows `specify-core diff` run from a command line, as a snapshot tool would.
+
 ## Do the same in your repository
 
 1. **Add the workflow.** Copy [`.github/workflows/step-diff.yml`](.github/workflows/step-diff.yml)
