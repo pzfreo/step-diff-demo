@@ -1,12 +1,18 @@
 # STEP diff demo
 
 When a pull request changes a part's STEP file, it gets a comment that says what changed in the part,
-shows a picture of the change, and carries the part's [Specify](https://github.com/pzfreo/specify-core-rust)
+shows a picture of the change, and carries the part's [Specify](https://github.com/pzfreo/specify-core)
 manufacturing answers to the new revision. This repository shows it working, and is a template for
 setting it up on your own parts.
 
+Comments here come from the **Draftwright GitHub App**, which compares the files on Draftwright's
+server and posts as `draftwright[bot]`. The app isn't open for anyone to install yet; until it is,
+the step-diff GitHub Action below posts the same comment from your own repository's CI.
+
 **See it:** [pull request #2](https://github.com/pzfreo/step-diff-demo/pull/2) makes the flange 2 mm
-thicker and the bolt holes 1 mm smaller. This is the comment the workflow posted on it; its
+thicker and the bolt holes 1 mm smaller, and [pull request #8](https://github.com/pzfreo/step-diff-demo/pull/8)
+changes only a spindle's AP242 PMI: a tighter position tolerance, a perpendicularity, a reworded note.
+This is the comment posted on #2; its
 picture and its "Turn the part round in 3D" link open the part in the browser:
 
 ![The STEP diff comment on pull request #2](docs/comment.png)
@@ -36,17 +42,30 @@ assembly in 3D, or one part of it.
 
 **Try it:** [the hand-off demo](https://pzfreo.github.io/step-diff-demo/handoff/) stands in for a CAD
 tool's viewer. Its button opens Draftwright's STEP diff and hands it two revisions, in the browser,
-with the few lines of [step-diff/HANDOFF.md](https://github.com/pzfreo/specify-core-rust/blob/main/step-diff/HANDOFF.md).
+with the few lines of [step-diff/HANDOFF.md](https://github.com/pzfreo/specify-core/blob/main/step-diff/HANDOFF.md).
 The same page shows `specify-core diff` run from a command line, as a snapshot tool would.
 
 ## Do the same in your repository
 
-1. **Add the workflow.** Copy [`.github/workflows/step-diff.yml`](.github/workflows/step-diff.yml)
-   into your repository at the same path and commit it to your default branch. It's one step:
+1. **Add the workflow.** Commit this file to your default branch as
+   `.github/workflows/step-diff.yml`:
 
    ```yaml
+   # On each pull request that changes a STEP file, comment with what changed in the part, its
+   # picture and the Specify answers carried to the new revision.
+   # https://github.com/pzfreo/specify-core/tree/main/step-diff
+   name: STEP diff
+   on:
+     pull_request:
+       paths: ['**.step', '**.stp', '**.STEP', '**.STP', '**.answers.json']
+   permissions:
+     contents: write       # the pictures, on the step-diff-images branch
+     pull-requests: write  # the comment
+   jobs:
+     diff:
+       runs-on: ubuntu-latest
        steps:
-         - uses: pzfreo/specify-core-rust/step-diff@main
+         - uses: pzfreo/specify-core/step-diff@main
    ```
 
    There's nothing to install and no secret to set; the job's own token is enough.
@@ -64,16 +83,16 @@ The same page shows `specify-core diff` run from a command line, as a snapshot t
 
    Without answers, the comment still shows what changed, the picture and the measures.
 
-That's all. The action's [guide](https://github.com/pzfreo/specify-core-rust/blob/main/step-diff/README.md)
+That's all. The action's [guide](https://github.com/pzfreo/specify-core/blob/main/step-diff/README.md)
 covers its options, what it compares, where the pictures go and its limits, forks among them.
-Assemblies are compared part by part, the parts paired by name. [How `diff` works](https://github.com/pzfreo/specify-core-rust/blob/main/docs/diff.md)
+Assemblies are compared part by part, the parts paired by name. [How `diff` works](https://github.com/pzfreo/specify-core/blob/main/docs/diff.md)
 explains how the two revisions are matched and what each part of the comment means.
 
 ## Try it here
 
 A pull request from a fork gets a read-only token, so the workflow can't comment on it. To try it
-yourself, use this repository as a template (or fork it), turn on Actions in your copy, and open a
-pull request within your copy:
+yourself, use this repository as a template (or fork it), add the workflow above, turn on Actions
+in your copy, and open a pull request within your copy:
 
 1. Change a dimension in `cast_bearing_unit.py`, for example the flange thickness `A1`.
 2. Run `python cast_bearing_unit.py`, with [build123d](https://github.com/gumyr/build123d)
@@ -90,7 +109,7 @@ pull request within your copy:
 | `gramil/` | gramil's model, a purfling cutter in twelve parts (pzfreo/gramil) |
 | `gramil_assembly.py` | builds `gramil_assembly.step` from it |
 | `gramil_assembly.step` | the assembly |
-| `.github/workflows/step-diff.yml` | the workflow that compares and comments |
+| `spindle.step` | a spindle with AP242 PMI written by Specify, changed in pull request #8 |
 
 The part is build123d's
 [cast bearing unit](https://github.com/gumyr/build123d/blob/dev/examples/cast_bearing_unit.py)
