@@ -35,7 +35,7 @@
   <h1>Compare two revisions in Draftwright, from your own viewer.</h1>
   <p>
     This page stands in for a CAD tool that already has two revisions of a part. Its button opens
-    <a href="https://editor.draftwright.io/diff">Draftwright's STEP diff</a> and hands it the two files.
+    <a href="https://draftwright.io/diff">Draftwright's STEP diff</a> and hands it the two files.
     They go from this page to that one inside the browser: nothing is uploaded, and the comparison runs there,
     in 3D, each change linked to its faces.
   </p>
@@ -63,12 +63,12 @@
     Each file is a Blob, File, ArrayBuffer or Uint8Array of a STEP file, or a gzipped one.</p>
 <pre><code>function compareInDraftwright(before, after) {
   // before, after: { name: 'bracket.step', data: Blob | File | ArrayBuffer | Uint8Array }
-  const origin = 'https://editor.draftwright.io';
-  const diff = window.open(`${origin}/diff`);
+  const origins = ['https://draftwright.io', 'https://editor.draftwright.io'];
+  const diff = window.open('https://draftwright.io/diff');
   addEventListener('message', function ready(e) {
-    if (e.source !== diff || e.origin !== origin || e.data?.type !== 'draftwright:diff-ready') return;
+    if (e.source !== diff || !origins.includes(e.origin) || e.data?.type !== 'draftwright:diff-ready') return;
     removeEventListener('message', ready);
-    diff.postMessage({ type: 'draftwright:diff', before, after }, origin);
+    diff.postMessage({ type: 'draftwright:diff', before, after }, e.origin);
   });
 }</code></pre>
 
@@ -97,20 +97,21 @@
 </main>
 <script>
   // The snippet above, with the files fetched from this page. The window opens on the click (as
-  // pop-up blockers require); the files are sent once it says it is ready.
-  const origin = 'https://editor.draftwright.io';
+  // pop-up blockers require); the files are sent once it says it is ready. Either origin may
+  // answer: the editor is moving from editor.draftwright.io to draftwright.io.
+  const origins = ['https://draftwright.io', 'https://editor.draftwright.io'];
   const status = document.getElementById('status');
   for (const button of document.querySelectorAll('button[data-before]')) {
     button.addEventListener('click', () => {
       const name = button.dataset.name;
       const files = Promise.all([button.dataset.before, button.dataset.after].map(u => fetch(u).then(r => r.blob())));
-      const diff = window.open(`${origin}/diff`);
+      const diff = window.open('https://draftwright.io/diff');
       if (!diff) { status.textContent = 'The window was blocked: allow pop-ups for this page and try again.'; return; }
       addEventListener('message', async function ready(e) {
-        if (e.source !== diff || e.origin !== origin || e.data?.type !== 'draftwright:diff-ready') return;
+        if (e.source !== diff || !origins.includes(e.origin) || e.data?.type !== 'draftwright:diff-ready') return;
         removeEventListener('message', ready);
         const [before, after] = await files;
-        diff.postMessage({ type: 'draftwright:diff', before: { name, data: before }, after: { name, data: after } }, origin);
+        diff.postMessage({ type: 'draftwright:diff', before: { name, data: before }, after: { name, data: after } }, e.origin);
       });
       status.textContent = `Opened Draftwright with the two revisions of ${name}.`;
     });
