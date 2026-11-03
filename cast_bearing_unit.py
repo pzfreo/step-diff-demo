@@ -52,7 +52,7 @@ license:
 # [Code]
 from build123d import *
 
-A, A1, Db2, H, J = 26, 11, 57, 98.5, 76.5
+A, A1, Db2, H, J = 26, 13, 57, 98.5, 76.5
 with BuildPart() as oval_flanged_bearing_unit:
     with BuildSketch() as plan:
         housing = Circle(Db2 / 2)
@@ -67,7 +67,7 @@ with BuildPart() as oval_flanged_bearing_unit:
     with Locations(oval_flanged_bearing_unit.faces().sort_by(Axis.Z)[-1]):
         CounterBoreHole(14 / 2, 47 / 2, 14)
     with Locations(*bolt_centers):
-        Hole(5)
+        Hole(4.5)
 
 oval_flanged_bearing_unit.part.color = Color(0x4C6377)
 
